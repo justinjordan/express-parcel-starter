@@ -1,0 +1,19 @@
+{
+  "name": "express-parcel-starter",
+  "version": "0.1.0",
+  "author": "Justin Jordan",
+  "license": "MIT",
+  "scripts": {
+    "build:client": "parcel build client/index.html --out-dir dist-client",
+    "build:server": "parcel build server/api.ts --target node --out-dir dist-server",
+    "build": "npm run build:client && npm run build:server",
+    "start": "NODE_ENV=dev node index.js"
+  },
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.4",
+    "typescript": "^4.1.5"
+  }
+}
