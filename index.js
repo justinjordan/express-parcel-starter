@@ -16,6 +16,9 @@ if (devMode) {
 class App {
   express;
   listener;
+  client;
+  server;
+  serverBundle;
 
   constructor() {
     if (devMode) {
@@ -23,16 +26,16 @@ class App {
         target: 'browser',
         outDir: './dist-client',
       });
+
       this.server = new Bundler(path.join(__dirname, 'server/api.ts'), {
         target: 'node',
         outDir: './dist-server',
       });
-
-      this.server.on('bundled', () => this.run());
+      this.server.on('bundled', bundle => this.serverBundle = bundle);
     }
   }
 
-  run() {
+  async run() {
     if (this.listener) {
       this.listener.close();
     }
@@ -43,10 +46,9 @@ class App {
       this.express.use('/api', require(path.join(__dirname, 'dist-server/api.js')).default);
       this.express.use(express.static(path.join(__dirname, 'dist-client')));
     } else {
+      this.serverBundle = await this.server.bundle();
       this.express.use('/api', async (req, res, next) => {
-        const bundle = await this.server.bundle();
-        const handler = requireUncached(bundle.name);
-        handler.default(req, res, next);
+        requireUncached(this.serverBundle.name).default(req, res, next);
       });
       this.express.use(this.client.middleware());
     }
@@ -56,4 +58,6 @@ class App {
   }
 }
 
-new App().run();
+(async () => {
+  await new App().run();
+})();
