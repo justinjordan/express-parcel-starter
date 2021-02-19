@@ -27,30 +27,43 @@ class App {
         outDir: './dist-client',
       });
 
-      this.server = new Bundler(path.join(__dirname, 'server/api.ts'), {
+      this.server = new Bundler(path.join(__dirname, 'server/index.ts'), {
         target: 'node',
         outDir: './dist-server',
       });
-      this.server.on('bundled', bundle => this.serverBundle = bundle);
+
+      // restart server on change
+      this.server.on('bundled', bundle => {
+        this.serverBundle = bundle;
+        this.listen();
+      });
     }
   }
 
   async run() {
+    if (devMode) {
+      // start server build
+      this.server.bundle();
+    } else {
+      // run production server
+      this.listen();
+    }
+  }
+
+  async listen() {
     if (this.listener) {
+      // close previous Express instance
       this.listener.close();
     }
 
     this.express = express();
 
-    if (!devMode) {
-      this.express.use('/api', require(path.join(__dirname, 'dist-server/api.js')).default);
-      this.express.use(express.static(path.join(__dirname, 'dist-client')));
-    } else {
-      this.serverBundle = await this.server.bundle();
-      this.express.use('/api', async (req, res, next) => {
-        requireUncached(this.serverBundle.name).default(req, res, next);
-      });
+    if (devMode) {
+      requireUncached(this.serverBundle.name).default(this.express);
       this.express.use(this.client.middleware());
+    } else {
+      require(path.join(__dirname, 'dist-server/index.js')).default(this.express);
+      this.express.use(express.static(path.join(__dirname, 'dist-client')));
     }
 
     console.log('Running on http://localhost:%s', port);
