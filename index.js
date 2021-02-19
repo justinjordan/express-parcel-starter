@@ -51,7 +51,7 @@ class App {
       this.express.use(this.client.middleware());
     }
 
-    console.log('Serving on port %s', port);
+    console.log('Running on http://localhost:%s', port);
     this.listener = this.express.listen(port);
   }
 }
